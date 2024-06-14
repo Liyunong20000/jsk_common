@@ -4,7 +4,7 @@ import rospy
 from jsk_network_tools.msg import FC2OCSLargeData
 from jsk_network_tools.silverhammer_util import *
 from threading import Lock
-from StringIO import StringIO
+from io import StringIO
 from std_msgs.msg import Time
 from io import BytesIO
 from socket import *
@@ -61,7 +61,8 @@ def receive_process_func(packets_queue, receive_ip, receive_port, packet_size, m
         last_received_data_seq_id = packet.seq_id
 
         # enqueue complete packets
-        for seq_id, pcts in packets.items():
+        for seq_id in list(packets.keys()):
+            pcts = packets[seq_id]
             if pcts[0].num == len(pcts):
                 packets_queue.put(packets.pop(seq_id))
 
@@ -107,7 +108,7 @@ class SilverHammerReceiver:
         self.packet_size = rospy.get_param("~packet_size", 1400)   #2Hz
         self.launched_time = rospy.Time.now()
         self.last_received_time = rospy.Time(0)
-        self.last_received_time_pub = rospy.Publisher("~last_received_time", Time)
+        self.last_received_time_pub = rospy.Publisher("~last_received_time", Time, queue_size=10)
         self.last_published_seq_id = -1
         self.diagnostic_timer = rospy.Timer(rospy.Duration(1.0 / 10),
                                             self.diagnosticTimerCallback)
@@ -132,7 +133,7 @@ class SilverHammerReceiver:
                 if self.receive_process.is_alive():
                     raise
             except Exception as e:
-                if "no attribute 'terminate'" in e.message:
+                if "no attribute 'terminate'" in e.args[0]:
                     return
                 pid = self.receive_process.pid
                 rospy.logerr("failed to terminate process %d: %s" % (pid, e))
@@ -180,7 +181,7 @@ class SilverHammerReceiver:
         self.last_published_seq_id = packets[0].seq_id
         packet_data_length = len(packets[0].data)
         packet_index = 0
-        b = StringIO()
+        b = BytesIO()
         for i in range(packets[0].num):
             if packets[packet_index].id == i:
                 packet = packets[packet_index]
