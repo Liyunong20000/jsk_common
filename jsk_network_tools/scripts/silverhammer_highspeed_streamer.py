@@ -4,7 +4,10 @@ import rospy
 from jsk_network_tools.msg import FC2OCSLargeData
 from jsk_network_tools.silverhammer_util import *
 from threading import Lock
-from StringIO import StringIO
+try:
+    import StringIO 
+except ImportError:
+    from io import StringIO 
 from io import BytesIO
 from socket import *
 import diagnostic_updater
@@ -93,7 +96,7 @@ class SilverHammerStreamer:
                 self.last_input_received_time_pub.publish(
                     Time(data=rospy.Time(0)))
     def sendTimerCallback(self, event):
-        buffer = StringIO()
+        buffer = BytesIO()
         with self.lock:
             msg = self.message_class()
             subscriber_info = subscribersFromMessage(msg)
@@ -104,7 +107,7 @@ class SilverHammerStreamer:
             rospy.msg.serialize_message(buffer, 0, msg)
             self.last_send_time = rospy.Time.now()
         # send buffer as UDP
-        self.sendBuffer(buffer.getvalue(), buffer.len * 8)
+        self.sendBuffer(buffer.getvalue(), len(buffer.getvalue()) * 8)
     def sendBuffer(self, buffer, buffer_size):
         self.send_num = self.send_num + 1
         packets = separateBufferIntoPackets(

@@ -167,10 +167,10 @@ class LargeDataUDPPacket():
                   packet_size)
         #print "buffer length", len(unpacked[3])
         return ret
-        
+
 def separateBufferIntoPackets(seq_id, buffer, packet_size):
     buffer_packet_size = packet_size - LargeDataUDPPacket.headerSize()
-    num_packet = len(buffer) / buffer_packet_size
+    num_packet = len(buffer) // buffer_packet_size
     if len(buffer) % buffer_packet_size != 0:
         num_packet = num_packet + 1
     packets = []
