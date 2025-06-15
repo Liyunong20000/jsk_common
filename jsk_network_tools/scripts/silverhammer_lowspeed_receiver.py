@@ -31,7 +31,7 @@ class SilverHammerUDPListener():
 class SilverHammerLowspeedReceiver():
     def __init__(self):
         message_class_str = rospy.get_param("~message",
-                                            "jsk_network_tools/FC2OCS")
+                                            "geometry_msgs/PoseStamped")
         try:
             self.receive_message = get_message_class(message_class_str)
         except:
@@ -44,11 +44,11 @@ class SilverHammerLowspeedReceiver():
         self.received_num = 0
         self.receive_port = rospy.get_param("~receive_port", 1024)
         self.receive_ip = rospy.get_param("~receive_ip", "127.0.0.1")
-        self.receive_buffer = rospy.get_param("~receive_buffer_size", 250)
+        self.receive_buffer = rospy.get_param("~receive_buffer_size", 1024)
         self.socket_server = socket(AF_INET, SOCK_DGRAM)
         self.socket_server.settimeout(None)
         self.socket_server.bind((self.receive_ip, self.receive_port))
-        self.receive_format = msgToStructFormat(self.receive_message())
+        # self.receive_format = msgToStructFormat(self.receive_message())
         self.pub = rospy.Publisher("~output", self.receive_message, queue_size=1)
         self.last_received_time = rospy.Time(0)
         self.last_received_time_pub = rospy.Publisher(
@@ -81,8 +81,10 @@ class SilverHammerLowspeedReceiver():
     def run(self):
         while not rospy.is_shutdown():
             recv_data, addr = self.socket_server.recvfrom(self.receive_buffer)
-            msg = unpackMessage(recv_data, self.receive_format,
-                                self.receive_message)
+            # msg = unpackMessage(recv_data, self.receive_format,
+            #                     self.receive_message)
+            msg = self.receive_message()
+            msg.deserialize(recv_data)
             with self.lock:
                 self.last_received_time = rospy.Time.now()
             self.pub.publish(msg)

@@ -20,7 +20,7 @@ from jsk_network_tools.srv import SetSendRate, SetSendRateResponse
 class SilverHammerLowspeedStreamer():
     def __init__(self):
         message_class_str = rospy.get_param("~message", 
-                                            "jsk_network_tools/FC2OCS")
+                                            "geometry_msgs/PoseStamped")
         try:
             self.send_message = get_message_class(message_class_str)
         except:
@@ -42,7 +42,7 @@ class SilverHammerLowspeedStreamer():
         self.event_driven = rospy.get_param("~event_driven", False)
         self.latest_message = None
         self.socket_client = socket(AF_INET, SOCK_DGRAM)
-        self.send_format = msgToStructFormat(self.send_message())
+        # self.send_format = msgToStructFormat(self.send_message())
         self.sub = rospy.Subscriber("~input", 
                                     self.send_message, self.messageCallback)
         if not self.event_driven:
@@ -98,8 +98,10 @@ class SilverHammerLowspeedStreamer():
             if self.event_driven:
                 self.sendMessage(msg)
     def sendMessage(self, msg):
-        packed_data = packMessage(msg, self.send_format)
-        self.socket_client.sendto(packed_data, (self.to_ip, self.to_port))
+        # packed_data = packMessage(msg, self.send_format)
+        # self.socket_client.sendto(packed_data, (self.to_ip, self.to_port))
+        serialized = msg.serialize()
+        self.socket_client.sendto(serialized, (self.to_ip, self.to_port))
         self.last_send_time = rospy.Time.now()
         self.send_num = self.send_num + 1
     def sendTimerCallback(self, event):
